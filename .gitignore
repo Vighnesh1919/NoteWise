@@ -1,0 +1,27 @@
+# ENV files (CRITICAL)
+.env
+.env.*
+!*.env.example
+
+# Node
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Backend (Go)
+bin/
+tmp/
+vendor/
+
+# Docker (optional overrides)
+docker-compose.override.yml
