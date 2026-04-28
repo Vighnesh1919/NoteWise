@@ -1,95 +1,163 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
 import { noteService } from '../../services/noteService'
 import { useAuth } from '../../hooks/useAuth'
-import Spinner from '../common/Spinner'
+import { useNavigate } from 'react-router-dom'
 
-export default function Sidebar() {
+import SidebarHeader from './components/SidebarHeader'
+import SidebarSearch from './components/SidebarSearch'
+import SidebarTabs from './components/SidebarTabs'
+import SidebarList from './components/SidebarList'
+import SidebarFooter from './components/SidebarFooter'
+
+import { Separator } from "@/components/ui/separator"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { FileText, Star, Trash2 } from "lucide-react"
+
+export default function Sidebar({ onOpenNote }) {
   const { logout } = useAuth()
-  const navigate   = useNavigate()
-  const { id: activeId } = useParams()
+  const navigate = useNavigate()
 
-  const [notes,   setNotes]   = useState([])
+  const [notes, setNotes] = useState([])
   const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState('notes')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
-    noteService.getAll()
-      .then(setNotes)
-      .finally(() => setLoading(false))
+    fetchNotes()
   }, [])
+
+  const fetchNotes = async () => {
+    const data = await noteService.getAll()
+    setNotes(data)
+    setLoading(false)
+  }
 
   const handleNew = async () => {
     const note = await noteService.create()
-    setNotes((prev) => [note, ...prev])
-    navigate(`/editor/${note.id}`)
+    setNotes(prev => [note, ...prev])
+    onOpenNote(note)
   }
 
   const handleDelete = async (e, id) => {
     e.stopPropagation()
     await noteService.remove(id)
-    setNotes((prev) => prev.filter((n) => n.id !== id))
-    if (activeId === id) navigate('/dashboard')
+    setNotes(prev =>
+      prev.map(n => n.id === id ? { ...n, is_deleted: true } : n)
+    )
   }
 
-  return (
-    <aside className="w-60 h-screen bg-white border-r border-gray-200 flex flex-col">
-      {/* Brand */}
-      <div className="px-5 py-4 border-b border-gray-100">
-        <span className="text-lg font-bold text-brand-600 tracking-tight">NoteWise</span>
-      </div>
+  const handleRestore = async (e, id) => {
+    e.stopPropagation()
+    await noteService.restore(id)
+    setNotes(prev =>
+      prev.map(n => n.id === id ? { ...n, is_deleted: false } : n)
+    )
+  }
 
-      {/* New note button */}
-      <div className="px-4 py-3">
-        <button
-          onClick={handleNew}
-          className="w-full flex items-center gap-2 px-3 py-2 text-sm
-                     bg-brand-500 hover:bg-brand-600 text-white rounded-lg
-                     transition-colors font-medium"
-        >
-          <span className="text-base leading-none">+</span> New note
-        </button>
-      </div>
+  const handleFavorite = async (e, id) => {
+    e.stopPropagation()
+    const res = await noteService.toggleFavorite(id)
+    setNotes(prev =>
+      prev.map(n =>
+        n.id === id ? { ...n, is_favorite: res.is_favorite } : n
+      )
+    )
+  }
 
-      {/* Notes list */}
-      <div className="flex-1 overflow-y-auto px-2">
-        {loading ? (
-          <div className="flex justify-center mt-6"><Spinner /></div>
-        ) : notes.length === 0 ? (
-          <p className="text-xs text-gray-400 text-center mt-6">No notes yet</p>
-        ) : (
-          notes.map((note) => (
-            <div
-              key={note.id}
-              onClick={() => navigate(`/editor/${note.id}`)}
-              className={`group flex items-center justify-between px-3 py-2 rounded-lg
-                          mb-0.5 cursor-pointer text-sm transition-colors
-                          ${activeId === note.id
-                            ? 'bg-brand-50 text-brand-700 font-medium'
-                            : 'text-gray-700 hover:bg-gray-100'}`}
-            >
-              <span className="truncate">{note.title || 'Untitled'}</span>
-              <button
-                onClick={(e) => handleDelete(e, note.id)}
-                className="opacity-0 group-hover:opacity-100 text-gray-400
-                           hover:text-red-500 transition-all text-xs px-1"
-              >
-                ✕
-              </button>
-            </div>
-          ))
-        )}
-      </div>
+  // 🔥 fuzzy search
+  const fuzzyMatch = (text, query) => {
+    text = text.toLowerCase()
+    query = query.toLowerCase()
 
-      {/* Logout */}
-      <div className="px-4 py-3 border-t border-gray-100">
-        <button
-          onClick={() => { logout(); navigate('/login') }}
-          className="w-full text-sm text-gray-500 hover:text-red-500
-                     transition-colors text-left px-2 py-1"
-        >
-          Sign out
-        </button>
-      </div>
-    </aside>
-  )
+    let i = 0, j = 0
+    while (i < text.length && j < query.length) {
+      if (text[i] === query[j]) j++
+      i++
+    }
+    return j === query.length
+  }
+
+  const filtered = notes
+    .filter(n => {
+      if (tab === 'notes') return !n.is_deleted
+      if (tab === 'favorites') return n.is_favorite && !n.is_deleted
+      if (tab === 'trash') return n.is_deleted
+    })
+    .filter(n => fuzzyMatch(n.title || '', search))
+
+ return (
+  <aside className="
+    w-72 h-screen flex flex-col
+    bg-white/80 backdrop-blur-xl
+    border-r border-gray-200
+  ">
+
+    {/* Header */}
+    <div className="px-6 py-5">
+      <SidebarHeader />
+    </div>
+
+    {/* Search */}
+    <div className="px-4 pb-2">
+      <SidebarSearch search={search} setSearch={setSearch} />
+    </div>
+
+    {/* Tabs with icons */}
+    <div className="px-3 space-y-1 text-sm">
+      <button
+        onClick={() => setTab('notes')}
+        className={`flex items-center gap-2 w-full px-3 py-2 rounded-md transition
+          ${tab === 'notes'
+            ? 'bg-blue-50 text-blue-600'
+            : 'hover:bg-gray-100 text-gray-600'}`}
+      >
+        <FileText size={16} />
+        Notes
+      </button>
+
+      <button
+        onClick={() => setTab('favorites')}
+        className={`flex items-center gap-2 w-full px-3 py-2 rounded-md transition
+          ${tab === 'favorites'
+            ? 'bg-yellow-50 text-yellow-600'
+            : 'hover:bg-gray-100 text-gray-600'}`}
+      >
+        <Star size={16} />
+        Favorites
+      </button>
+
+      <button
+        onClick={() => setTab('trash')}
+        className={`flex items-center gap-2 w-full px-3 py-2 rounded-md transition
+          ${tab === 'trash'
+            ? 'bg-red-50 text-red-600'
+            : 'hover:bg-gray-100 text-gray-600'}`}
+      >
+        <Trash2 size={16} />
+        Trash
+      </button>
+    </div>
+
+    {/* Divider */}
+    <Separator className="my-3" />
+
+    {/* Scrollable Notes */}
+    <ScrollArea className="flex-1 px-3">
+      <SidebarList
+        tab={tab}
+        notes={filtered}
+        loading={loading}
+        onNew={handleNew}
+        onOpen={onOpenNote}
+        onDelete={handleDelete}
+        onFavorite={handleFavorite}
+        onRestore={handleRestore}
+      />
+    </ScrollArea>
+
+    {/* Footer */}
+    <SidebarFooter logout={logout} navigate={navigate} />
+
+  </aside>
+)
 }

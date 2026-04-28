@@ -44,6 +44,17 @@ func ( s *NoteService) Update(id,userID,title string ,content []byte) ( *models.
 	return note,err 
 }
 
-func ( s *NoteService) Delete( id,userID string ) error {
-	return  s.repo.Delete(id,userID)
+
+
+
+func (s *NoteService) ToggleFavorite(noteID, userID string) (bool, error) {
+	return s.repo.ToggleFavorite(noteID, userID)
+}
+
+func (s *NoteService) Delete(noteID, userID string) error {
+	return s.repo.SoftDelete(noteID, userID)
+}
+
+func (s *NoteService) Restore(noteID, userID string) error {
+	return s.repo.Restore(noteID, userID)
 }

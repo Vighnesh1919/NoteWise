@@ -19,7 +19,7 @@ func Setup(r *gin.Engine, auth *handler.AuthHandler, note *handler.NoteHandler, 
 	}
 
 	// Protected routes
-	protected := api.Group("/")
+	protected := api.Group("")
 	protected.Use(middleware.AuthRequired(secret))
 	{
 		protected.POST("/notes", note.Create)
@@ -27,5 +27,9 @@ func Setup(r *gin.Engine, auth *handler.AuthHandler, note *handler.NoteHandler, 
 		protected.GET("/notes/:id", note.GetOne)
 		protected.PUT("/notes/:id", note.Update)
 		protected.DELETE("/notes/:id", note.Delete)
+
+		
+	protected.PATCH("/notes/:id/favorite", note.ToggleFavorite)
+	protected.PATCH("/notes/:id/restore", note.Restore)
 	}
 }

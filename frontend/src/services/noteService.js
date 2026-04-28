@@ -24,4 +24,13 @@ export const noteService = {
   async remove(id) {
     await api.delete(`/notes/${id}`)
   },
+
+  async toggleFavorite(id) {
+    const { data } = await api.patch(`/notes/${id}/favorite`)
+    return data.data
+  },
+
+  async restore(id) {
+    await api.patch(`/notes/${id}/restore`)
+  },
 }

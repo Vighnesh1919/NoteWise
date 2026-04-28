@@ -95,13 +95,39 @@ func (h *NoteHandler) Update(c *gin.Context) {
 }
 
 func (h *NoteHandler) Delete(c *gin.Context) {
+	id := c.Param("id")
+	userID := c.GetString("user_id")
 
-	err := h.svc.Delete(c.Param("id"), c.GetString("user_id"))
+	if err := h.svc.Delete(id, userID); err != nil {
+		utils.Fail(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
+	utils.Success(c, http.StatusOK, "deleted")
+}
+
+
+func (h *NoteHandler) ToggleFavorite(c *gin.Context) {
+	id := c.Param("id")
+	userID := c.GetString("user_id")
+
+	isFav, err := h.svc.ToggleFavorite(id, userID)
 	if err != nil {
 		utils.Fail(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	utils.Success(c, http.StatusOK, gin.H{"message": "deleted"})
+	utils.Success(c, http.StatusOK, gin.H{"is_favorite": isFav})
+}
+
+func (h *NoteHandler) Restore(c *gin.Context) {
+	id := c.Param("id")
+	userID := c.GetString("user_id")
+
+	if err := h.svc.Restore(id, userID); err != nil {
+		utils.Fail(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.Success(c, http.StatusOK, "restored")
 }

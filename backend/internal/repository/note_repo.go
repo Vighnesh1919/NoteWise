@@ -12,63 +12,87 @@ type NoteRepo struct {
 }
 
 func NewNoteRepo(db *sql.DB) *NoteRepo {
-
 	return &NoteRepo{db}
 }
 
+/* ================= CREATE ================= */
+
 func (r *NoteRepo) Create(note *models.Note) error {
-	query := `INSERT INTO notes (user_id, title, content) VALUES ($1, $2, $3) RETURNING id, created_at, updated_at`
+	query := `
+	INSERT INTO notes (user_id, title, content)
+	VALUES ($1, $2, $3)
+	RETURNING id, created_at, updated_at
+	`
+
 	return r.db.QueryRow(query, note.UserID, note.Title, note.Content).
 		Scan(&note.ID, &note.CreatedAt, &note.UpdatedAt)
 }
 
+/* ================= GET ALL ================= */
+
 func (r *NoteRepo) GetAllByUser(userID string) ([]models.Note, error) {
 
-	query := `SELECT id,user_id,title,content,created_at,updated_at
-	          FROM notes
-			  WHERE user_id=$1 AND is_deleted=false
-			  ORDER BY updated_at DESC`
+	query := `
+	SELECT id, user_id, title, content, parent_id, is_favorite, is_deleted, created_at, updated_at
+	FROM notes
+	WHERE user_id=$1
+	ORDER BY updated_at DESC
+	`
 
 	rows, err := r.db.Query(query, userID)
-
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
 
 	var notes []models.Note
 
 	for rows.Next() {
-
 		var n models.Note
 
-		if err := rows.Scan(&n.ID, &n.UserID, &n.Title, &n.Content, &n.CreatedAt, &n.UpdatedAt); err != nil {
+		if err := rows.Scan(
+			&n.ID,
+			&n.UserID,
+			&n.Title,
+			&n.Content,
+			&n.ParentID,
+			&n.IsFavorite,
+			&n.IsDeleted,
+			&n.CreatedAt,
+			&n.UpdatedAt,
+		); err != nil {
 			return nil, err
 		}
 
 		notes = append(notes, n)
-
 	}
 
 	return notes, nil
-
 }
+
+/* ================= GET ONE ================= */
 
 func (r *NoteRepo) GetByID(id, userID string) (*models.Note, error) {
 
 	note := &models.Note{}
 
-	query := `SELECT id,user_id,title,content,created_at,updated_at 
-	          FROM notes
-			  WHERE id=$1 AND user_id=$2 AND is_deleted=false`
+	query := `
+	SELECT id, user_id, title, content, parent_id, is_favorite, is_deleted, created_at, updated_at
+	FROM notes
+	WHERE id=$1 AND user_id=$2
+	`
 
-	err := r.db.QueryRow(query, id, userID).Scan(&note.ID,
+	err := r.db.QueryRow(query, id, userID).Scan(
+		&note.ID,
 		&note.UserID,
 		&note.Title,
 		&note.Content,
+		&note.ParentID,
+		&note.IsFavorite,
+		&note.IsDeleted,
 		&note.CreatedAt,
-		&note.UpdatedAt)
+		&note.UpdatedAt,
+	)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -80,18 +104,54 @@ func (r *NoteRepo) GetByID(id, userID string) (*models.Note, error) {
 	return note, nil
 }
 
+/* ================= UPDATE ================= */
+
 func (r *NoteRepo) Update(note *models.Note) error {
-	query := `UPDATE notes SET title=$1 ,content=$2,updated_at=NOW() WHERE id=$3 AND user_id=$4`
+	query := `
+	UPDATE notes 
+	SET title=$1, content=$2, updated_at=NOW() 
+	WHERE id=$3 AND user_id=$4
+	`
+
 	_, err := r.db.Exec(query, note.Title, note.Content, note.ID, note.UserID)
-
 	return err
-
 }
 
-func (r *NoteRepo) Delete(id, userID string) error {
-	query := `UPDATE notes SET is_deleted=true
-	             WHERE id=$1 AND user_id=$2`
-	_, err := r.db.Exec(query, id, userID)
+/* ================= DELETE ================= */
 
+func (r *NoteRepo) SoftDelete(noteID, userID string) error {
+	query := `
+	UPDATE notes 
+	SET is_deleted = true 
+	WHERE id=$1 AND user_id=$2
+	`
+	_, err := r.db.Exec(query, noteID, userID)
+	return err
+}
+
+/* ================= FAVORITE ================= */
+
+func (r *NoteRepo) ToggleFavorite(noteID, userID string) (bool, error) {
+	query := `
+	UPDATE notes 
+	SET is_favorite = NOT is_favorite
+	WHERE id=$1 AND user_id=$2
+	RETURNING is_favorite
+	`
+
+	var isFav bool
+	err := r.db.QueryRow(query, noteID, userID).Scan(&isFav)
+	return isFav, err
+}
+
+/* ================= RESTORE ================= */
+
+func (r *NoteRepo) Restore(noteID, userID string) error {
+	query := `
+	UPDATE notes 
+	SET is_deleted = false 
+	WHERE id=$1 AND user_id=$2
+	`
+	_, err := r.db.Exec(query, noteID, userID)
 	return err
 }
