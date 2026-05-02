@@ -5,6 +5,7 @@ import LoginPage     from '../pages/Auth/LoginPage'
 import RegisterPage  from '../pages/Auth/RegisterPage'
 import DashboardPage from '../pages/Dashboard/DashboardPage'
 import EditorPage    from '../pages/Editor/EditorPage'
+import UserProfile from '../components/layout/UserProfile'
 
 export default function App() {
   return (
@@ -22,6 +23,15 @@ export default function App() {
           <Route path="/editor/:id" element={
             <ProtectedRoute><EditorPage /></ProtectedRoute>
           } />
+
+           <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <UserProfile />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Default */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

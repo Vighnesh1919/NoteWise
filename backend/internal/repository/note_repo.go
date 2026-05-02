@@ -155,3 +155,36 @@ func (r *NoteRepo) Restore(noteID, userID string) error {
 	_, err := r.db.Exec(query, noteID, userID)
 	return err
 }
+
+func ( r *NoteRepo) HardDelete(noteID,userID string) error{
+
+	query:=`DELETE FROM notes
+	WHERE id=$1 AND user_id=$2`
+
+	_,err:= r.db.Exec(query,noteID,userID)
+
+	return err
+}
+
+
+
+func ( r *NoteRepo) DeleteOldTrash() error{
+	query := `DELETE FROM notes
+	          WHERE is_deleted=true AND deleted_at<NOW()-INTERVAL'30 days'`
+
+			  _,err:= r.db.Exec(query)
+			  return err 
+}
+
+
+func ( r *NoteRepo) CountByUser(userID string) ( int ,error){
+	var count int
+
+	query := `SELECT COUNT(*) FROM notes WHERE user_id=$1  `
+	err:=r.db.QueryRow(query,userID).Scan(&count)
+
+	if err!=nil{
+		return 0,err
+	}
+return count,err
+}

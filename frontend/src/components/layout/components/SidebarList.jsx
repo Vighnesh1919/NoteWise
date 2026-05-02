@@ -6,45 +6,34 @@ export default function SidebarList({
   tab,
   notes,
   loading,
-  onNew,
   onOpen,
   onDelete,
+  onHardDelete,
   onFavorite,
   onRestore
 }) {
   return (
-    <div className="flex-1 overflow-y-auto mt-3 px-3">
+    <div className="mt-2">
 
       {tab === 'notes' && (
-        <>
-          <div className="flex justify-between items-center mb-2 px-1">
-            <span className="text-xs text-gray-400 uppercase">Notes</span>
-            <button
-              onClick={onNew}
-              className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 transition"
-            >
-              + New
-            </button>
-          </div>
-
-          {loading ? (
-            <Spinner />
-          ) : notes.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center mt-4">
-              No notes found
-            </p>
-          ) : (
-            notes.map(note => (
-              <SidebarItem
-                key={note.id}
-                note={note}
-                onOpen={onOpen}
-                onDelete={onDelete}
-                onFavorite={onFavorite}
-              />
-            ))
-          )}
-        </>
+        loading ? (
+          <Spinner />
+        ) : notes.length === 0 ? (
+          <p className="text-xs text-gray-400 text-center mt-4">
+            No notes found
+          </p>
+        ) : (
+          notes.map(note => (
+            <SidebarItem
+              key={note.id}
+              note={note}
+              onOpen={onOpen}
+              onDelete={onDelete}
+              onHardDelete={onHardDelete}
+              onFavorite={onFavorite}
+            />
+          ))
+        )
       )}
 
       {tab === 'favorites' && notes.map(note => (
@@ -53,6 +42,7 @@ export default function SidebarList({
           note={note}
           onOpen={onOpen}
           onDelete={onDelete}
+         
           onFavorite={onFavorite}
         />
       ))}
@@ -62,6 +52,7 @@ export default function SidebarList({
           key={note.id}
           note={note}
           onRestore={onRestore}
+           onHardDelete={onHardDelete}  
         />
       ))}
 

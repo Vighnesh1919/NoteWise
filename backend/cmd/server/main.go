@@ -24,7 +24,7 @@ func main() {
 	noteRepo := repository.NewNoteRepo(db)
 
 	authSvc := service.NewAuthService(userRepo, cfg.JWTSecret)
-	noteSvc := service.NewNoteService(noteRepo)
+	noteSvc := service.NewNoteService(noteRepo,authSvc)
 
 	authHandler := handler.NewAuthHandler(authSvc)
 	noteHandler := handler.NewNoteHandler(noteSvc)
@@ -44,6 +44,13 @@ func main() {
 	})
 
 	routes.Setup(r, authHandler, noteHandler, cfg.JWTSecret)
+
+go func(){
+	for{
+		time.Sleep(24*time.Hour)
+		noteRepo.DeleteOldTrash()
+	}
+}()
 
 	log.Printf("Server is running on port %s", cfg.Port)
 	r.Run(":" + cfg.Port)

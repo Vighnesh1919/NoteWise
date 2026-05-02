@@ -69,3 +69,13 @@ func (s *AuthService) Login(email, password string) (*models.User, string, error
 	token, err := utils.GenerateToken(user.ID, user.Role, s.jwtSecret)
 	return user, token, err
 }
+
+func (s *AuthService) GetRole(userID string) (string, error) {
+
+	user, err := s.userRepo.FindByID(userID)
+	
+	if err != nil {
+		return "", err
+	}
+	return user.Role, nil
+}

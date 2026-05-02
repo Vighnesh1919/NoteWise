@@ -27,6 +27,8 @@ func Setup(r *gin.Engine, auth *handler.AuthHandler, note *handler.NoteHandler, 
 		protected.GET("/notes/:id", note.GetOne)
 		protected.PUT("/notes/:id", note.Update)
 		protected.DELETE("/notes/:id", note.Delete)
+		protected.DELETE("/notes/:id/hard",note.HardDelete)
+		
 
 		
 	protected.PATCH("/notes/:id/favorite", note.ToggleFavorite)

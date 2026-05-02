@@ -131,3 +131,19 @@ func (h *NoteHandler) Restore(c *gin.Context) {
 
 	utils.Success(c, http.StatusOK, "restored")
 }
+
+func ( h *NoteHandler) HardDelete(c *gin.Context){
+
+	id :=c.Param("id")
+	userID :=c.GetString("user_id")
+
+	if err:= h.svc.HardDelete(id,userID); err!=nil{
+		utils.Fail(c,http.StatusInternalServerError,err.Error())
+		return 
+	}        
+
+	utils.Success(c,http.StatusOK,"permanenet deleted")
+
+
+}
+

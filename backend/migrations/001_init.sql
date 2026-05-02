@@ -18,7 +18,8 @@ CREATE TABLE notes (
 
     parent_id UUID REFERENCES notes(id) ON DELETE CASCADE, 
     is_favorite BOOLEAN DEFAULT FALSE,                     
-    is_deleted BOOLEAN DEFAULT FALSE,                     
+    is_deleted BOOLEAN DEFAULT FALSE,    
+     deleted_at TIMESTAMP,                 
 
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()

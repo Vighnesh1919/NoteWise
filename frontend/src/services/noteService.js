@@ -33,4 +33,8 @@ export const noteService = {
   async restore(id) {
     await api.patch(`/notes/${id}/restore`)
   },
+
+  async hardDelete(id) {
+  await api.delete(`/notes/${id}/hard`)
+},
 }

@@ -49,3 +49,24 @@ func IsDuplicateEmailError(err error) bool {
 	return strings.Contains(err.Error(), "duplicate key") ||
 		strings.Contains(err.Error(), "UNIQUE constraint")
 }
+
+func (r *UserRepo) FindByID(id string) (*models.User, error) {
+	user := &models.User{}
+
+	query := `SELECT id,email,password,role,created_at,updated_at FROM users WHERE id=$1`
+
+	err := r.db.QueryRow(query, id).Scan(
+		&user.ID,
+		&user.Email,
+		&user.Password,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
